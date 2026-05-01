@@ -1,0 +1,63 @@
+﻿@page "/tours"
+@rendermode InteractiveServer
+
+@using Museum_management.Models
+@using Museum_management.Services
+@inject ToursController ToursController
+@inject NavigationManager Nav
+
+
+@if (tours == null)
+{
+    <p class="loading">Loading...</p>
+}
+else if (tours.Count==0)
+{
+    <p class="loading">No tours found.</p>
+}
+else
+{
+    <br/>
+    <div class="table-container">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Pavadinimas</th>
+                    <th>Aprašymas</th>
+                    <th>Pradžia</th>
+                    <th>Pabaiga</th>
+                    <th>Veiksmai</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var tour in tours)
+                {
+                    <tr>
+                        <td>@tour.Title</td>
+                        <td>@tour.Description</td>
+                        <td>@tour.Starts_at.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@tour.Finishes_at.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>
+                            <button class="btn-details" @onclick="() => OpenTourDetails(tour.Id)">Detaliau </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<Tour>? tours;
+
+    protected override void OnInitialized()
+    {
+        tours = ToursController.GetToursList();
+    }
+
+    private void OpenTourDetails(int id)
+    {
+        Nav.NavigateTo($"/tour_page/{id}");
+    }
+}

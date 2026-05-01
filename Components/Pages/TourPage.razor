@@ -1,0 +1,71 @@
+﻿@page "/tour_page/{Id:int}"
+@using Museum_management.Models
+@using Museum_management.Services
+@inject ToursController ToursController
+@inject NavigationManager Nav
+
+
+
+<div class="details-container">
+    @if (tour == null)
+    {
+        <div class="loading-box">
+            <div class="spinner"></div>
+            <p>Kraunama ekskursijos informacija...</p>
+        </div>
+    }
+    else
+    {
+        <div class="tour-card shadow-lg">
+            <div class="tour-header">
+                <span class="category-tag">Ekskursijos detalės</span>
+                <h2>@tour.Title</h2>
+            </div>
+
+            <div class="tour-body">
+                <div class="info-section">
+                    <p class="description">@tour.Description</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="label">Pradžia</span>
+                        <span class="value">@tour.Starts_at.ToString("yyyy-MM-dd HH:mm")</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">Pabaiga</span>
+                        <span class="value">@tour.Finishes_at.ToString("yyyy-MM-dd HH:mm")</span>
+                    </div>
+                </div>
+                <br/>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="label">Ekursijos planas</span>
+                        @for(int i=0; i < plan.Length; i++)
+                        {
+                            <span class="value">@(i+1)) @plan[i]</span>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    }
+</div>
+
+@code{
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private Tour tour;
+    private string[] plan;
+
+    protected override void OnInitialized()
+    {
+        tour = ToursController.GetTourById(Id);
+        plan = tour.Plan.Split(';');
+    }
+
+}

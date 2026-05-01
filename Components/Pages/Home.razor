@@ -1,0 +1,30 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+
+<PageTitle>Pradžia</PageTitle>
+
+<div class="home-hero">
+    <h1>Sveiki atvykę į karo muziejų</h1>
+    <p class="subtitle">Atraskite mūsų eksponatus ir istoriją</p>
+    <div class="button-group">
+        <button class="btn-hero" @onclick="OpenExhibitManagement">
+            Valdyti eksponatus
+        </button>
+        <button class="btn-hero btn-secondary" @onclick="OpenTours">
+            Peržiūrėti ekskursijas
+        </button>
+    </div>
+</div>
+
+@code {
+    private void OpenExhibitManagement()
+    {
+        Nav.NavigateTo("/exhibit-management");
+    }
+    
+    private void OpenTours()
+    {
+        Nav.NavigateTo("/tours");
+    }
+}
