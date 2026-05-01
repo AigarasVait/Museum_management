@@ -1,0 +1,300 @@
+﻿@page "/exhibit-management"
+@rendermode InteractiveServer
+@using Museum_management.Models
+@using Museum_management.Controllers
+@inject ExhibitsController ExhibitsController
+@inject NavigationManager Nav
+
+<PageTitle>Eksponatų valdymas</PageTitle>
+
+<div class="management-container">
+    <div class="page-header">
+        <h1>Eksponatų valdymas</h1>
+        <button class="btn-gold" @onclick="OpenNewExhibitDialog">+ Pridėti naują</button>
+    </div>
+
+    <!-- Feedback Messages -->
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+    @if (!string.IsNullOrEmpty(warningMessage))
+    {
+        <div class="alert alert-warning">@warningMessage</div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="loading-box">
+            <div class="spinner"></div>
+            <p>Kraunami eksponatai...</p>
+        </div>
+    }
+    else if (exhibits.Count == 0)
+    {
+        <p class="empty-state">Eksponatų sąraše tuščia. Pridėkite pirmąjį!</p>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Pavadinimas</th>
+                        <th>Aprašymas</th>
+                        <th>Matmenys (I x P x A)</th>
+                        <th>Veiksmai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var exhibit in exhibits)
+                    {
+                        <tr>
+                            <td>@exhibit.Name</td>
+                            <td class="text-truncate" title="@exhibit.Description">@exhibit.Description</td>
+                            <td class="code-text">@exhibit.Length cm x @exhibit.Width cm x @exhibit.Height cm</td>
+                            <td class="actions-cell">
+                                <button class="btn-action btn-edit" @onclick="() => OpenExhibitEditDialog(exhibit)">Redaguoti</button>
+                                <button class="btn-action btn-delete" @onclick="() => DeleteExhibit(exhibit.Id)">Šalinti</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Create Dialog -->
+@if (showCreateDialog)
+{
+    <div class="modal-overlay" @onclick="CancelCreateDialog">
+        <div class="modal-content" @onclick:stopPropagation>
+            <h3>Naujas eksponentas</h3>
+            <div class="form-grid">
+                <label>Pavadinimas <input type="text" @bind="formName" class="form-input" placeholder="Pvz.: T-34 tankas" /></label>
+                <label>Aprašymas <textarea @bind="formDescription" class="form-input form-textarea" placeholder="Trumpas aprašymas..."></textarea></label>
+                <label>Ilgis (cm) <input type="number" step="0.01" @bind="formLength" class="form-input" /></label>
+                <label>Plotis (cm) <input type="number" step="0.01" @bind="formWidth" class="form-input" /></label>
+                <label>Aukštis (cm) <input type="number" step="0.01" @bind="formHeight" class="form-input" /></label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" @onclick="CancelCreateDialog">Atšaukti</button>
+                <button class="btn-gold" @onclick="SubmitNewExhibit">Sukurti</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Edit Dialog -->
+@if (showEditDialog)
+{
+    <div class="modal-overlay" @onclick="CancelEditDialog">
+        <div class="modal-content" @onclick:stopPropagation>
+            <h3>Redaguoti eksponentą</h3>
+            <div class="form-grid">
+                <label>Pavadinimas <input type="text" @bind="formName" class="form-input" /></label>
+                <label>Aprašymas <textarea @bind="formDescription" class="form-input form-textarea"></textarea></label>
+                <label>Ilgis (cm) <input type="number" step="0.01" @bind="formLength" class="form-input" /></label>
+                <label>Plotis (cm) <input type="number" step="0.01" @bind="formWidth" class="form-input" /></label>
+                <label>Aukštis (cm) <input type="number" step="0.01" @bind="formHeight" class="form-input" /></label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" @onclick="CancelEditDialog">Atšaukti</button>
+                <button class="btn-gold" @onclick="ConfirmEditChanges">Išsaugoti</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Dialog -->
+@if (showDeleteConfirm)
+{
+    <div class="modal-overlay" @onclick="CancelDelete">
+        <div class="modal-content modal-sm" @onclick:stopPropagation>
+            <h3>Patvirtinimas</h3>
+            <p>Ar tikrai norite pašalinti šį eksponentą? Šis veiksmas negrįžtamas.</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" @onclick="CancelDelete">Atšaukti</button>
+                <button class="btn-delete" @onclick="ConfirmDelete">Pašalinti</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Exhibit> exhibits = new();
+    private bool isLoading = true;
+    private string successMessage = string.Empty;
+    private string warningMessage = string.Empty;
+
+    // Dialog States
+    private bool showCreateDialog = false;
+    private bool showEditDialog = false;
+    private bool showDeleteConfirm = false;
+    private Exhibit? exhibitToEdit = null;
+    private int exhibitIdToDelete = 0;
+
+    // Form Fields
+    private string formName = string.Empty;
+    private string formDescription = string.Empty;
+    private decimal formLength;
+    private decimal formWidth;
+    private decimal formHeight;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExhibitsAsync();
+    }
+
+    private async Task LoadExhibitsAsync()
+    {
+        isLoading = true;
+        try
+        {
+            // Task.Run keeps the UI responsive in InteractiveServer mode
+            exhibits = await Task.Run(() => ExhibitsController.GetExhibitsList());
+            ClearMessages();
+        }
+        catch (Exception ex)
+        {
+            warningMessage = $"Klaida kraunant eksponatus: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // --- DELETE FLOW ---
+    private void DeleteExhibit(int id)
+    {
+        exhibitIdToDelete = id;
+        showDeleteConfirm = true;
+        ClearMessages();
+    }
+
+    private async Task ConfirmDelete()
+    {
+        var result = await Task.Run(() => ExhibitsController.Delete(exhibitIdToDelete));
+        if (result > 0)
+        {
+            successMessage = "Eksponentas sėkmingai pašalintas.";
+            await LoadExhibitsAsync();
+        }
+        else
+        {
+            warningMessage = "Nepavyko pašalinti eksponato.";
+        }
+        CancelDelete();
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+        exhibitIdToDelete = 0;
+    }
+
+    // --- CREATE FLOW ---
+    private void OpenNewExhibitDialog()
+    {
+        ResetForm();
+        showCreateDialog = true;
+        ClearMessages();
+    }
+
+    private void CancelCreateDialog()
+    {
+        showCreateDialog = false;
+    }
+
+    private async Task SubmitNewExhibit()
+    {
+        if (string.IsNullOrWhiteSpace(formName))
+        {
+            warningMessage = "Pavadinimas yra privalomas.";
+            return;
+        }
+
+        var result = await Task.Run(() => ExhibitsController.CreateNewExhibit(formName, formDescription, formLength, formWidth, formHeight));
+
+        if (result > 0)
+        {
+            successMessage = "Naujas eksponentas sėkmingai sukurtas.";
+            CancelCreateDialog();
+            await LoadExhibitsAsync();
+        }
+        else if (result == ExhibitsController.AlreadyExists)
+        {
+            warningMessage = "Eksponentas šiuo pavadinimu jau egzistuoja.";
+        }
+        else
+        {
+            warningMessage = "Klaida kuriant eksponentą.";
+        }
+    }
+
+    // --- EDIT FLOW ---
+    private void OpenExhibitEditDialog(Exhibit exhibit)
+    {
+        exhibitToEdit = exhibit;
+        formName = exhibit.Name;
+        formDescription = exhibit.Description;
+        formLength = exhibit.Length;
+        formWidth = exhibit.Width;
+        formHeight = exhibit.Height;
+        showEditDialog = true;
+        ClearMessages();
+    }
+
+    private void CancelEditDialog()
+    {
+        showEditDialog = false;
+        exhibitToEdit = null;
+    }
+
+    private async Task ConfirmEditChanges()
+    {
+        if (exhibitToEdit == null) return;
+
+        if (string.IsNullOrWhiteSpace(formName))
+        {
+            warningMessage = "Pavadinimas yra privalomas.";
+            return;
+        }
+
+        var result = await Task.Run(() => ExhibitsController.EditExhibit(
+            exhibitToEdit.Id, formName, formDescription, formLength, formWidth, formHeight));
+
+        if (result > 0)
+        {
+            successMessage = "Eksponento duomenys sėkmingai atnaujinti.";
+            CancelEditDialog();
+            await LoadExhibitsAsync();
+        }
+        else if (result == ExhibitsController.AlreadyExists)
+        {
+            warningMessage = "Kitas eksponentas jau turi šį pavadinimą.";
+        }
+        else
+        {
+            warningMessage = "Klaida atnaujinant eksponentą.";
+        }
+    }
+
+    // --- HELPERS ---
+    private void ResetForm()
+    {
+        formName = string.Empty;
+        formDescription = string.Empty;
+        formLength = 0m;
+        formWidth = 0m;
+        formHeight = 0m;
+    }
+
+    private void ClearMessages()
+    {
+        successMessage = string.Empty;
+        warningMessage = string.Empty;
+    }
+}

@@ -1,4 +1,5 @@
 using Museum_management.Components;
+using Museum_management.Controllers;
 using Museum_management.Data;
 using Museum_management.Services;
 
@@ -9,6 +10,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<ToursController>();
+builder.Services.AddScoped<ExhibitsController>();
 builder.Services.AddSingleton<DBConnection>();
 
 var app = builder.Build();
