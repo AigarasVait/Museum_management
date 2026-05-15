@@ -12,6 +12,7 @@ namespace Museum_management.Services
         {
             _db = db;
         }
+
         public List<Tour> GetToursList()
         {
             var result = new List<Tour>();
@@ -62,6 +63,26 @@ namespace Museum_management.Services
                 };
             }
             return null;
+        }
+
+        public bool HasUpcomingTour(int employeeId, DateTime startDate, DateTime endDate)
+        {
+            using var conn = _db.CreateConnection();
+            conn.Open();
+
+            var cmd = new MySqlCommand(@"
+                SELECT COUNT(*)
+                FROM tour
+                WHERE employee_id = @employee_id
+                                    AND DATE(starts_at) <= @end_date
+                                    AND DATE(finishes_at) >= @start_date;", conn);
+
+            cmd.Parameters.AddWithValue("@employee_id", employeeId);
+            cmd.Parameters.AddWithValue("@start_date", startDate);
+            cmd.Parameters.AddWithValue("@end_date", endDate);
+
+            var count = Convert.ToInt32(cmd.ExecuteScalar());
+            return count > 0;
         }
     }
 }
