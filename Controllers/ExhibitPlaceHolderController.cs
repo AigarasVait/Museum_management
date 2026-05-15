@@ -1,10 +1,10 @@
-﻿using MySqlConnector;
-using Museum_management.Data;
+﻿using Museum_management.Data;
 using Museum_management.Models;
+using MySqlConnector;
 
 namespace Museum_management.Controllers
 {
-    public class ExhibitsController
+    public class ExhibitPlaceHoldersController
     {
         private readonly DBConnection _db;
 
@@ -13,32 +13,32 @@ namespace Museum_management.Controllers
         public const int Success = 1;
         public const int NotFound = 0;
 
-        public ExhibitsController(DBConnection db)
+        public ExhibitPlaceHoldersController(DBConnection db)
         {
             _db = db;
         }
 
-
-        public List<Exhibit> GetExhibitsList()
+        /// <summary>
+        /// Gets all exhibits from the database
+        /// </summary>
+        public List<ExhibitPlaceHolder> GetExhibitPlaceHolders()
         {
-            var result = new List<Exhibit>();
+            var result = new List<ExhibitPlaceHolder>();
 
             using var conn = _db.CreateConnection();
             conn.Open();
 
             var cmd = new MySqlCommand(
-                "SELECT id, name, description, length, width, height FROM exhibit",
+                "SELECT id, length, width, height FROM exhibitPlaceHolders",
                 conn);
 
             using var reader = cmd.ExecuteReader();
 
             while (reader.Read())
             {
-                result.Add(new Exhibit
+                result.Add(new ExhibitPlaceHolder
                 {
                     Id = reader.GetInt32("id"),
-                    Name = reader.GetString("name"),
-                    Description = reader.GetString("description"),
                     Length = reader.GetDecimal("length"),
                     Width = reader.GetDecimal("width"),
                     Height = reader.GetDecimal("height")
@@ -56,54 +56,29 @@ namespace Museum_management.Controllers
             using var conn = _db.CreateConnection();
             conn.Open();
 
-            var cmd = new MySqlCommand("DELETE FROM exhibit WHERE id = @id", conn);
+            var cmd = new MySqlCommand("DELETE FROM exhibitPlaceHolders WHERE id = @id", conn);
             cmd.Parameters.AddWithValue("@id", id);
 
             return cmd.ExecuteNonQuery();
         }
 
-        public bool CheckIfExists(string name, int? excludeId = null)
-        {
-            using var conn = _db.CreateConnection();
-            conn.Open();
 
-            string query = "SELECT COUNT(*) FROM exhibit WHERE LOWER(TRIM(name)) = LOWER(TRIM(@name))";
-            if (excludeId.HasValue)
-            {
-                query += " AND id != @excludeId";
-            }
-
-            var cmd = new MySqlCommand(query, conn);
-            cmd.Parameters.AddWithValue("@name", name);
-            if (excludeId.HasValue)
-            {
-                cmd.Parameters.AddWithValue("@excludeId", excludeId.Value);
-            }
-
-            return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
-        }
-
+        
         /// <summary>
         /// Returns:
         ///   > 0  : New exhibit ID (success)
+        ///    0   : 
         ///   -1   : Exhibit with this name already exists
-        ///    0   : Insertion failed
         /// </summary>
-        public int CreateNewExhibit(string name, string description, decimal length, decimal width, decimal height)
+        public int Create(decimal length, decimal width, decimal height)
         {
-            if (CheckIfExists(name))
-            {
-                return AlreadyExists;
-            }
 
             using var conn = _db.CreateConnection();
             conn.Open();
 
             var cmd = new MySqlCommand(
-                "INSERT INTO exhibit (name, description, length, width, height) VALUES (@name, @description, @length, @width, @height); SELECT LAST_INSERT_ID();",
+                "INSERT INTO exhibitPlaceHolders (length, width, height) VALUES (@length, @width, @height); SELECT LAST_INSERT_ID();",
                 conn);
-            cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@description", description ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@length", length);
             cmd.Parameters.AddWithValue("@width", width);
             cmd.Parameters.AddWithValue("@height", height);
@@ -118,33 +93,40 @@ namespace Museum_management.Controllers
             }
         }
 
+
+        public bool Validate(int id)
+        {
+            using var conn = _db.CreateConnection();
+            conn.Open();
+
+            string query = "SELECT EXISTS (SELECT 1 FROM exhibitPlaceHolders WHERE  id = @id)";
+        
+            var cmd = new MySqlCommand(query, conn);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            return Convert.ToBoolean(cmd.ExecuteScalar());
+        }
+
         /// <summary>
         /// Returns:
         ///    1   : Successfully updated
-        ///   -1   : Another exhibit with this name already exists
         ///    0   : Exhibit not found
         /// </summary>
-        public int EditExhibit(int id, string name, string description, decimal length, decimal width, decimal height)
+        public int Edit(int id, decimal length, decimal width, decimal height)
         {
-            if (CheckIfExists(name, excludeId: id))
-            {
-                return AlreadyExists;
-            }
-
             using var conn = _db.CreateConnection();
             conn.Open();
 
             var cmd = new MySqlCommand(
-                "UPDATE exhibit SET name = @name, description = @description, length = @length, width = @width, height = @height WHERE id = @id",
+                "UPDATE exhibitPlaceHolders SET length = @length, width = @width, height = @height WHERE id = @id",
                 conn);
             cmd.Parameters.AddWithValue("@id", id);
-            cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@description", description ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@length", length);
             cmd.Parameters.AddWithValue("@width", width);
             cmd.Parameters.AddWithValue("@height", height);
 
             return cmd.ExecuteNonQuery();
         }
+
     }
 }
