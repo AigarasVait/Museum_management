@@ -71,7 +71,7 @@ namespace Museum_management.Controllers
             return true;
         }
 
-        public int UpdateStatus(int holidayId, int employeeId, string status)
+        public int ChangeStatus(int holidayId, int employeeId, string status)
         {
             using var conn = _db.CreateConnection();
             conn.Open();
@@ -85,6 +85,35 @@ namespace Museum_management.Controllers
             cmd.Parameters.AddWithValue("@status", status);
 
             return cmd.ExecuteNonQuery();
+        }
+
+        public List<Holiday> GetHolidayRequests()
+        {
+            var result = new List<Holiday>();
+
+            using var conn = _db.CreateConnection();
+            conn.Open();
+
+            var cmd = new MySqlCommand(@"
+                SELECT id, employee_id, start, end, status
+                FROM holiday
+                WHERE status = @status
+                ORDER BY id DESC;", conn);
+            cmd.Parameters.AddWithValue("@status", "Pateikta");
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(new Holiday
+                {
+                    Id = reader.GetInt32("id"),
+                    EmployeeId = reader.GetInt32("employee_id"),
+                    Start = DateOnly.FromDateTime(reader.GetDateTime("start")),
+                    End = DateOnly.FromDateTime(reader.GetDateTime("end")),
+                    Status = reader.GetString("status")
+                });
+            }
+
+            return result;
         }
     }
 }

@@ -1,0 +1,203 @@
+@page "/holiday-management"
+@rendermode @(global::Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer)
+
+@inject global::Museum_management.Controllers.HolidayController HolidayController
+
+<div class="holiday-management-page">
+    <div class="management-hero">
+        <div>
+            <h1>Atostogų užklausų valdymas</h1>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="management-card">
+            <p class="empty-state">Kraunami atostogų prašymai...</p>
+        </div>
+    }
+    else
+    {
+        <div class="management-card">
+
+            @if (holidays.Count == 0)
+            {
+                <p class="empty-state">Nėra pateiktų atostogų prašymų.</p>
+            }
+            else
+            {
+                <div class="holiday-table-wrapper">
+                    <table class="holiday-table">
+                        <thead>
+                            <tr>
+                                <th>Darbuotojo ID</th>
+                                <th>Pradžia</th>
+                                <th>Pabaiga</th>
+                                <th>Būsena</th>
+                                <th>Veiksmai</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var holiday in holidays)
+                            {
+                                <tr>
+                                    <td>@holiday.EmployeeId</td>
+                                    <td>@holiday.Start.ToString("yyyy-MM-dd")</td>
+                                    <td>@holiday.End.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <span class="request-status">@holiday.Status</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn-success" @onclick="() => HandleConfirm(holiday)" disabled="@isProcessing">Patvirtinti</button>
+                                        <button class="btn-danger" @onclick="() => HandleReject(holiday)" disabled="@isProcessing">Atmesti</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+
+    @if (showApprovalDialog)
+    {
+        <div class="modal-overlay" @onclick="HandleCancelConfirmation">
+            <div class="modal-card modal-card-sm" @onclick:stopPropagation>
+                <div class="modal-header">
+                    <h2>Patvirtinti prašymą</h2>
+                    <button class="modal-close" @onclick="HandleCancelConfirmation">×</button>
+                </div>
+
+                <p>Ar tikrai norite patvirtinti šį atostogų prašymą?</p>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" @onclick="HandleCancelConfirmation">Atšaukti</button>
+                    <button type="button" class="btn-success" @onclick="HandleConfirmConfirmation" disabled="@isProcessing">Taip, patvirtinti</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showRejectionDialog)
+    {
+        <div class="modal-overlay" @onclick="HandleCancelRejection">
+            <div class="modal-card modal-card-sm" @onclick:stopPropagation>
+                <div class="modal-header">
+                    <h2>Atmesti prašymą</h2>
+                    <button class="modal-close" @onclick="HandleCancelRejection">×</button>
+                </div>
+
+                <p>Ar tikrai norite atmesti šį atostogų prašymą?</p>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" @onclick="HandleCancelRejection">Atšaukti</button>
+                    <button type="button" class="btn-danger" @onclick="HandleConfirmRejection" disabled="@isProcessing">Taip, atmesti</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<global::Museum_management.Models.Holiday> holidays = new();
+    private bool isLoading = true;
+    private bool isProcessing;
+    private bool showApprovalDialog;
+    private bool showRejectionDialog;
+    private global::Museum_management.Models.Holiday? selectedHoliday;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHolidaysAsync();
+    }
+
+    private async Task LoadHolidaysAsync()
+    {
+        isLoading = true;
+        try
+        {
+            holidays = await Task.Run(() => HolidayController.GetHolidayRequests());
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void HandleReject(global::Museum_management.Models.Holiday holiday)
+    {
+        selectedHoliday = holiday;
+        showRejectionDialog = true;
+    }
+
+    private void HandleConfirm(global::Museum_management.Models.Holiday holiday)
+    {
+        selectedHoliday = holiday;
+        showApprovalDialog = true;
+    }
+
+    private void HandleCancelConfirmation()
+    {
+        showApprovalDialog = false;
+        selectedHoliday = null;
+    }
+
+    private void HandleCancelRejection()
+    {
+        showRejectionDialog = false;
+        selectedHoliday = null;
+    }
+
+    private async Task HandleConfirmConfirmation()
+    {
+        if (selectedHoliday is null)
+            return;
+
+        isProcessing = true;
+        try
+        {
+            var result = await Task.Run(() => HolidayController.ChangeStatus(selectedHoliday.Id, selectedHoliday.EmployeeId, "Patvirtinta"));
+
+            if (result > 0)
+            {
+                await LoadHolidaysAsync();
+                HandleCancelConfirmation();
+            }
+            else
+            {
+                HandleCancelConfirmation();
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task HandleConfirmRejection()
+    {
+        if (selectedHoliday is null)
+            return;
+
+        isProcessing = true;
+        try
+        {
+            var result = await Task.Run(() => HolidayController.ChangeStatus(selectedHoliday.Id, selectedHoliday.EmployeeId, "Atmesta"));
+
+            if (result > 0)
+            {
+                await LoadHolidaysAsync();
+                HandleCancelRejection();
+            }
+            else
+            {
+                HandleCancelRejection();
+            }
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+}
