@@ -12,6 +12,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<ToursController>();
 builder.Services.AddScoped<ExhibitsController>();
 builder.Services.AddScoped<ExhibitPlaceHoldersController>();
+builder.Services.AddScoped<HolidayController>();
 builder.Services.AddSingleton<DBConnection>();
 
 var app = builder.Build();

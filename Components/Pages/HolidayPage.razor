@@ -1,0 +1,329 @@
+@page "/atostogos"
+@page "/holidays"
+@rendermode @(global::Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer)
+
+@inject global::Museum_management.Controllers.HolidayController HolidayController
+
+<div class="holiday-page">
+    <div class="holiday-toolbar">
+        <button class="btn-open-form" @onclick="OpenHolidayRequestDialog">Prašyti atostogų</button>
+    </div>
+
+    <div class="holiday-hero">
+        <div>
+            <p class="eyebrow">Darbuotojų zona</p>
+            <h1>Atostogos</h1>
+            <p class="subtitle">Peržiūrėkite savo atostogų sąrašą ir pateikite naują prašymą.</p>
+        </div>
+    </div>
+
+    @if (showToast)
+    {
+        <div class="toast @toastClass" role="status" aria-live="polite">
+            <div class="toast__content">
+                <strong>@toastTitle</strong>
+                <span>@toastMessage</span>
+            </div>
+            <button type="button" class="toast__close" @onclick="CloseToast">×</button>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="holiday-card">
+            <p class="empty-state">Kraunami atostogų duomenys...</p>
+        </div>
+    }
+    else
+    {
+        <div class="holiday-card request-list-card">
+            <div class="section-header">
+                <h2>Mano atostogos</h2>
+            </div>
+
+            @if (holidays.Count == 0)
+            {
+                <p class="empty-state">Dar neturite pateiktų atostogų prašymų.</p>
+            }
+            else
+            {
+                <div class="holiday-table-wrapper">
+                    <table class="holiday-table">
+                        <thead>
+                            <tr>
+                                <th>Pradžia</th>
+                                <th>Pabaiga</th>
+                                <th>Būsena</th>
+                                <th>Veiksmai</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var holiday in holidays)
+                            {
+                                <tr>
+                                    <td>@holiday.Start.ToString("yyyy-MM-dd")</td>
+                                    <td>@holiday.End.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <span class="request-status">@holiday.Status</span>
+                                    </td>
+                                    <td>
+                                        @if (holiday.Status == "Pateikta")
+                                        {
+                                            <button class="btn-danger" @onclick="() => CancelRequest(holiday)">Atšaukti</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+
+    @if (showRequestDialog)
+    {
+        <div class="modal-overlay" @onclick="CloseRequestDialog">
+            <div class="modal-card" @onclick:stopPropagation>
+                <div class="modal-header">
+                    <h2>Pateikti atostogų prašymą</h2>
+                    <button class="modal-close" @onclick="CloseRequestDialog">×</button>
+                </div>
+
+                <form @onsubmit="SubmitRequest" @onsubmit:preventDefault="true">
+                    <div class="holiday-form">
+                        <label>
+                            Pradžios data
+                            <input class="form-input" type="date" @bind="requestForm.StartDate" />
+                        </label>
+                        <label>
+                            Pabaigos data
+                            <input class="form-input" type="date" @bind="requestForm.EndDate" />
+                        </label>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(formError))
+                    {
+                        <div class="alert alert-warning">@formError</div>
+                    }
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" @onclick="CloseRequestDialog">Atšaukti</button>
+                        <button type="submit" class="btn-submit" disabled="@isSubmitting">Pateikti</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+
+    @if (showCancelDialog)
+    {
+        <div class="modal-overlay" @onclick="HandleCancel">
+            <div class="modal-card modal-card-sm" @onclick:stopPropagation>
+                <div class="modal-header">
+                    <h2>Patvirtinti atšaukimą</h2>
+                    <button class="modal-close" @onclick="HandleCancel">×</button>
+                </div>
+
+                <p>Ar tikrai norite atšaukti šį atostogų prašymą?</p>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" @onclick="HandleCancel">Ne</button>
+                    <button type="button" class="btn-danger" @onclick="HandleConfirm" disabled="@isCancelling">Taip, atšaukti</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private HolidayFormModel requestForm = new();
+    private List<global::Museum_management.Models.Holiday> holidays = new();
+    private bool isLoading = true;
+    private bool isSubmitting;
+    private bool isCancelling;
+    private bool showRequestDialog;
+    private bool showCancelDialog;
+    private const int employeeId = 1;
+    private global::Museum_management.Models.Holiday? holidayToCancel;
+    private string formError = string.Empty;
+    private bool showToast;
+    private string toastTitle = string.Empty;
+    private string toastMessage = string.Empty;
+    private string toastClass = string.Empty;
+    private CancellationTokenSource? toastCts;
+
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHolidaysAsync();
+    }
+
+    private async Task LoadHolidaysAsync()
+    {
+        isLoading = true;
+        try
+        {
+            holidays = await Task.Run(() => HolidayController.GetHolidaysByUserId(employeeId));
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenHolidayRequestDialog()
+    {
+        formError = string.Empty;
+        CloseToast();
+        showRequestDialog = true;
+    }
+
+    private void CloseRequestDialog()
+    {
+        showRequestDialog = false;
+        isSubmitting = false;
+    }
+
+    private void CancelRequest(global::Museum_management.Models.Holiday holiday)
+    {
+        holidayToCancel = holiday;
+        showCancelDialog = true;
+    }
+
+    private void HandleCancel()
+    {
+        showCancelDialog = false;
+        holidayToCancel = null;
+        isCancelling = false;
+    }
+
+    private async Task SubmitRequest()
+    {
+        formError = string.Empty;
+
+        if (!Validate(out formError))
+            return;
+
+        isSubmitting = true;
+        try
+        {
+            var created = await Task.Run(() => HolidayController.CreateHoliday(employeeId, requestForm.StartDate, requestForm.EndDate));
+
+            if (created)
+            {
+                await LoadHolidaysAsync();
+                CloseRequestDialog();
+                await ShowSuccessToast("Prašymas pateiktas. Būsena: Pateikta.");
+            }
+            else
+            {
+                CloseRequestDialog();
+                await ShowErrorToast("Pasirinktu laikotarpiu turite suplanuotų ekskursijų.");
+            }
+        }
+        catch
+        {
+            CloseRequestDialog();
+            await ShowErrorToast("Nepavyko pateikti prašymo.");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task HandleConfirm()
+    {
+        if (holidayToCancel is null)
+        {
+            return;
+        }
+
+        isCancelling = true;
+        try
+        {
+            var result = await Task.Run(() => HolidayController.ChangeStatus(holidayToCancel.Id, employeeId, "Atšaukta"));
+
+            if (result > 0)
+            {
+                await LoadHolidaysAsync();
+                HandleCancel();
+                await ShowSuccessToast("Prašymas sėkmingai atšauktas.");
+            }
+            else
+            {
+                HandleCancel();
+                await ShowErrorToast("Nepavyko atšaukti prašymo.");
+            }
+        }
+        finally
+        {
+            isCancelling = false;
+        }
+    }
+
+    private async Task ShowSuccessToast(string messageText)
+    {
+        await ShowToastAsync("Sėkmė", messageText, "toast-success");
+    }
+
+    private async Task ShowErrorToast(string messageText)
+    {
+        await ShowToastAsync("Klaida", messageText, "toast-error");
+    }
+
+    private async Task ShowToastAsync(string title, string messageText, string cssClass, int durationMs = 3000)
+    {
+        toastCts?.Cancel();
+        toastCts?.Dispose();
+
+        toastCts = new CancellationTokenSource();
+        toastTitle = title;
+        toastMessage = messageText;
+        toastClass = cssClass;
+        showToast = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await Task.Delay(durationMs, toastCts.Token);
+            CloseToast();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private void CloseToast()
+    {
+        showToast = false;
+        toastTitle = string.Empty;
+        toastMessage = string.Empty;
+        toastClass = string.Empty;
+    }
+
+    private bool Validate(out string error)
+    {
+      error = string.Empty;
+      if (requestForm.StartDate == default || requestForm.EndDate == default)
+      {
+        error = "Nurodykite pradžios ir pabaigos datas.";
+        return false;
+      }
+      if (requestForm.EndDate.Date < requestForm.StartDate.Date)
+      {
+        error = "Pabaigos data negali būti ankstesnė už pradžios datą.";
+        return false;
+      }
+      return true;
+    }
+
+    private sealed class HolidayFormModel
+    {
+        public DateTime StartDate { get; set; } = DateTime.Today.AddDays(1);
+        public DateTime EndDate { get; set; } = DateTime.Today.AddDays(1);
+    }
+}

@@ -14,6 +14,12 @@
         <button class="btn-hero" @onclick="OpenExhibitPlaceHoldersManagement">
             Valdyti eksponavimo vietas
         </button>
+        <button class="btn-hero" @onclick="OpenHolidayManagementPage">
+            Valdyti atostogų užklausas
+        </button>
+        <button class="btn-hero btn-secondary" @onclick="OpenHolidayPage">
+            Peržiūrėti atostogas
+        </button>
         <button class="btn-hero btn-secondary" @onclick="OpenTours">
             Peržiūrėti ekskursijas
         </button>
@@ -34,5 +40,15 @@
     private void OpenTours()
     {
         Nav.NavigateTo("/tours");
+    }
+
+    private void OpenHolidayPage()
+    {
+        Nav.NavigateTo("/holidays");
+    }
+
+    private void OpenHolidayManagementPage()
+    {
+        Nav.NavigateTo("/holiday-management");
     }
 }
