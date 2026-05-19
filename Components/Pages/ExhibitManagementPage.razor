@@ -13,7 +13,6 @@
         <button class="btn-gold" @onclick="OpenNewExhibitDialog">+ Pridėti naują</button>
     </div>
 
-    <!-- Feedback Messages -->
     @if (!string.IsNullOrEmpty(successMessage))
     {
         <div class="alert alert-success">@successMessage</div>
@@ -32,7 +31,7 @@
     }
     else if (exhibits.Count == 0)
     {
-        <p class="empty-state">Eksponatų sąraše tuščia. Pridėkite pirmąjį!</p>
+        <p class="empty-state">Eksponatų sąrašas tuščias. Pridėkite pirmąjį!</p>
     }
     else
     {
@@ -65,7 +64,6 @@
     }
 </div>
 
-<!-- Create Dialog -->
 @if (showCreateDialog)
 {
     <div class="modal-overlay" @onclick="CancelCreateDialog">
@@ -86,7 +84,6 @@
     </div>
 }
 
-<!-- Edit Dialog -->
 @if (showEditDialog)
 {
     <div class="modal-overlay" @onclick="CancelEditDialog">
@@ -107,7 +104,6 @@
     </div>
 }
 
-<!-- Delete Confirmation Dialog -->
 @if (showDeleteConfirm)
 {
     <div class="modal-overlay" @onclick="CancelDelete">
@@ -128,14 +124,12 @@
     private string successMessage = string.Empty;
     private string warningMessage = string.Empty;
 
-    // Dialog States
     private bool showCreateDialog = false;
     private bool showEditDialog = false;
     private bool showDeleteConfirm = false;
     private Exhibit? exhibitToEdit = null;
     private int exhibitIdToDelete = 0;
 
-    // Form Fields
     private string formName = string.Empty;
     private string formDescription = string.Empty;
     private decimal formLength;
@@ -152,7 +146,6 @@
         isLoading = true;
         try
         {
-            // Task.Run keeps the UI responsive in InteractiveServer mode
             exhibits = await Task.Run(() => ExhibitsController.GetExhibitsList());
             ClearMessages();
         }
@@ -166,7 +159,6 @@
         }
     }
 
-    // --- DELETE FLOW ---
     private void DeleteExhibit(int id)
     {
         exhibitIdToDelete = id;
@@ -195,7 +187,7 @@
         exhibitIdToDelete = 0;
     }
 
-    // --- CREATE FLOW ---
+
     private void OpenNewExhibitDialog()
     {
         ResetForm();
@@ -234,7 +226,7 @@
         }
     }
 
-    // --- EDIT FLOW ---
+
     private void OpenExhibitEditDialog(Exhibit exhibit)
     {
         exhibitToEdit = exhibit;
@@ -282,7 +274,6 @@
         }
     }
 
-    // --- HELPERS ---
     private void ResetForm()
     {
         formName = string.Empty;

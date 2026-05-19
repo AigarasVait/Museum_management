@@ -1,0 +1,298 @@
+﻿@page "/exhibit-place-holders-management"
+@rendermode InteractiveServer
+@using System.Threading
+@using Museum_management.Models
+@using Museum_management.Controllers
+@inject ExhibitPlaceHoldersController ExhibitPlaceHoldersController
+@inject NavigationManager Nav
+
+<PageTitle>Eksponavimo vietų valdymas</PageTitle>
+
+<div class="management-container">
+    <div class="page-header">
+        <h1>Eksponavimo vietų valdymas</h1>
+        <button class="btn-gold" @onclick="HandleCreate">+ Pridėti naują</button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading-box">
+            <div class="spinner"></div>
+            <p>Kraunami eksponatai...</p>
+        </div>
+    }
+    else if (exhibitPlaceHolders.Count == 0)
+    {
+        <p class="empty-state">Eksponatų sąrašas tuščias. Pridėkite pirmąjį!</p>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Matmenys (I x P x A)</th>
+                        <th>Veiksmai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var placeHolder in exhibitPlaceHolders)
+                    {
+                        <tr>
+                            <td>@placeHolder.Id</td>
+                            <td class="code-text">@placeHolder.Length cm x @placeHolder.Width cm x @placeHolder.Height cm</td>
+                            <td class="actions-cell">
+                                <button class="btn-action btn-edit" @onclick="() => HandleEdit(placeHolder)">Redaguoti</button>
+                                <button class="btn-action btn-delete" @onclick="() => HandleDelete(placeHolder.Id)">Šalinti</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@if (showCreateDialog)
+{
+    <div class="modal-overlay" @onclick="HandleCancelCreate">
+        <div class="modal-content" @onclick:stopPropagation>
+            <h3>Nauja eksponavimo vieta</h3>
+            <div class="form-grid">
+                <label>Ilgis (cm) <input type="number" step="0.01" @bind="formLength" class="form-input" /></label>
+                <label>Plotis (cm) <input type="number" step="0.01" @bind="formWidth" class="form-input" /></label>
+                <label>Aukštis (cm) <input type="number" step="0.01" @bind="formHeight" class="form-input" /></label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" @onclick="HandleCancelCreate">Atšaukti</button>
+                <button class="btn-gold" @onclick="HandleSubmitCreation">Sukurti</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showEditDialog)
+{
+    <div class="modal-overlay" @onclick="HandleCancelEdit">
+        <div class="modal-content" @onclick:stopPropagation>
+            <h3>Redaguoti eksponavimo vietą</h3>
+            <div class="form-grid">
+                <label>Ilgis (cm) <input type="number" step="0.01" @bind="formLength" class="form-input" /></label>
+                <label>Plotis (cm) <input type="number" step="0.01" @bind="formWidth" class="form-input" /></label>
+                <label>Aukštis (cm) <input type="number" step="0.01" @bind="formHeight" class="form-input" /></label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" @onclick="HandleCancelEdit">Atšaukti</button>
+                <button class="btn-gold" @onclick="HandleSubmitEdit">Išsaugoti</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showDeleteConfirm)
+{
+    <div class="modal-overlay" @onclick="HandleCancelDelete">
+        <div class="modal-content modal-sm" @onclick:stopPropagation>
+            <h3>Patvirtinimas</h3>
+            <p>Ar tikrai norite pašalinti šią eksponavimo vietą? Šis veiksmas negrįžtamas.</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" @onclick="HandleCancelDelete">Atšaukti</button>
+                <button class="btn-delete" @onclick="HandleConfirmDelete">Pašalinti</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showToast)
+{
+    <div class="toast @toastClass" @onclick="CloseToast">
+        <div class="toast__content">
+            <strong>@toastTitle</strong>
+            <span>@toastMessage</span>
+        </div>
+        <button class="toast__close" @onclick="CloseToast">&times;</button>
+    </div>
+}
+
+@code {
+    private List<ExhibitPlaceHolder> exhibitPlaceHolders = new();
+    private bool isLoading = true;
+
+    private bool showCreateDialog = false;
+    private bool showEditDialog = false;
+    private bool showDeleteConfirm = false;
+    private ExhibitPlaceHolder? exhibitPlaceHolderToEdit = null;
+    private int exhibitPlaceHolderIdToDelete = 0;
+    private decimal formLength;
+    private decimal formWidth;
+    private decimal formHeight;
+
+    private bool showToast;
+    private string toastTitle = string.Empty;
+    private string toastMessage = string.Empty;
+    private string toastClass = string.Empty;
+    private CancellationTokenSource? toastCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExhibitPlaceHoldersAsync();
+    }
+
+    private async Task LoadExhibitPlaceHoldersAsync()
+    {
+        isLoading = true;
+        try
+        {
+            exhibitPlaceHolders = await Task.Run(() => ExhibitPlaceHoldersController.GetExhibitPlaceHolders());
+        }
+        catch (Exception ex)
+        {
+            _ = ShowErrorToast($"Klaida kraunant eksponavimo vietas: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void HandleDelete(int id)
+    {
+        exhibitPlaceHolderIdToDelete = id;
+        showDeleteConfirm = true;
+    }
+
+    private async Task HandleConfirmDelete()
+    {
+        var result = await Task.Run(() => ExhibitPlaceHoldersController.Delete(exhibitPlaceHolderIdToDelete));
+        if (result > 0)
+        {
+            _ = ShowSuccessToast("Eksponavimo vieta sėkmingai pašalinta.");
+            await LoadExhibitPlaceHoldersAsync();
+        }
+        else
+        {
+            _ = ShowErrorToast("Nepavyko pašalinti eksponavimo vietos.");
+        }
+        HandleCancelDelete();
+    }
+
+    private void HandleCancelDelete()
+    {
+        showDeleteConfirm = false;
+        exhibitPlaceHolderIdToDelete = 0;
+    }
+
+    private void HandleCreate()
+    {
+        ResetForm();
+        showCreateDialog = true;
+    }
+
+    private void HandleCancelCreate()
+    {
+        showCreateDialog = false;
+    }
+
+    private async Task HandleSubmitCreation()
+    {
+        if (formLength == 0 || formWidth == 0 || formHeight == 0)
+        {
+            _ = ShowErrorToast("Vienas ar daugiau matmenų yra nulis!");
+            return;
+        }
+        var result = await Task.Run(() => ExhibitPlaceHoldersController.Create(formLength, formWidth, formHeight));
+        if (result >= 0)
+        {
+            _ = ShowSuccessToast("Nauja eksponavimo vieta sėkmingai sukurta.");
+            HandleCancelCreate();
+            await LoadExhibitPlaceHoldersAsync();
+        }
+        else
+        {
+            _ = ShowErrorToast("Klaida kuriant eksponentą.");
+        }
+    }
+
+    private void HandleEdit(ExhibitPlaceHolder placeHolder)
+    {
+        exhibitPlaceHolderToEdit = placeHolder;
+        formLength = placeHolder.Length;
+        formWidth = placeHolder.Width;
+        formHeight = placeHolder.Height;
+        showEditDialog = true;
+    }
+
+    private void HandleCancelEdit()
+    {
+        showEditDialog = false;
+        exhibitPlaceHolderToEdit = null;
+    }
+
+    private async Task HandleSubmitEdit()
+    {
+        if (exhibitPlaceHolderToEdit == null) return;
+
+        var is_valid = await Task.Run(() => ExhibitPlaceHoldersController.Validate(exhibitPlaceHolderToEdit.Id));
+        if (!is_valid)
+        {
+            _ = ShowErrorToast("Ši eksponavimo vieta neegzistuoja.");
+            return;
+        }
+
+        if (formLength == 0 || formWidth == 0 || formHeight == 0)
+        {
+            _ = ShowErrorToast("Vienas ar daugiau matmenų yra nulis (0)!");
+            return;
+        }
+
+        var result = await Task.Run(() => ExhibitPlaceHoldersController.Edit(exhibitPlaceHolderToEdit.Id, formLength, formWidth, formHeight));
+        if (result > 0)
+        {
+            _ = ShowSuccessToast("Eksponavimo vietos duomenys sėkmingai atnaujinti.");
+            HandleCancelEdit();
+            await LoadExhibitPlaceHoldersAsync();
+        }
+        else
+        {
+            _ = ShowErrorToast("Klaida atnaujinant eksponavimo vietą.");
+        }
+    }
+
+    private void ResetForm()
+    {
+        formLength = 0m;
+        formWidth = 0m;
+        formHeight = 0m;
+    }
+
+
+    private async Task ShowSuccessToast(string messageText) => await ShowToastAsync("Sėkmė", messageText, "toast-success");
+    private async Task ShowErrorToast(string messageText) => await ShowToastAsync("Klaida", messageText, "toast-error");
+
+    private async Task ShowToastAsync(string title, string messageText, string cssClass, int durationMs = 3000)
+    {
+        toastCts?.Cancel();
+        toastCts?.Dispose();
+
+        toastCts = new CancellationTokenSource();
+        toastTitle = title;
+        toastMessage = messageText;
+        toastClass = cssClass;
+        showToast = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await Task.Delay(durationMs, toastCts.Token);
+            CloseToast();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private void CloseToast()
+    {
+        showToast = false;
+    }
+}
