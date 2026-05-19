@@ -17,6 +17,9 @@
         <button class="btn-hero btn-secondary" @onclick="OpenHolidayPage">
             Peržiūrėti atostogas
         </button>
+        <button class="btn-hero" @onclick="OpenScheduleManagementPage">
+            Peržiūrėti tvarkaraščius
+        </button>
         <button class="btn-hero btn-secondary" @onclick="OpenTours">
             Peržiūrėti ekskursijas
         </button>
@@ -33,6 +36,11 @@
     {
         Nav.NavigateTo("/tours");
     }
+    
+        private void OpenScheduleManagementPage()
+        {
+            Nav.NavigateTo("/schedule-management");
+        }
 
     private void OpenHolidayPage()
     {

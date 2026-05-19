@@ -1,0 +1,128 @@
+@page "/schedule-management"
+@rendermode @(global::Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer)
+
+@inject global::Museum_management.Controllers.ScheduleController ScheduleController
+
+<div class="schedule-management-page">
+    <div class="management-hero">
+        <div>
+            <h1>Tvarkaraščių valdymas</h1>
+            <p class="subtitle">Generuoti mėnesio tvarkaraštį.</p>
+        </div>
+    </div>
+
+    <div class="management-card">
+        <div class="section-header">
+            <h2>Generuoti tvarkaraštį</h2>
+        </div>
+
+        <div class="management-actions">
+            <span>Bus generuojamas: <strong>@NextMonthDisplay</strong></span>
+            <button class="btn-hero" @onclick="HandleCreateSchedule" disabled="@isProcessing">Generuoti</button>
+        </div>
+    </div>
+
+    @if (showToast)
+    {
+        <div class="toast @toastClass" role="status" aria-live="polite">
+            <div class="toast__content">
+                <strong>@toastTitle</strong>
+                <span>@toastMessage</span>
+            </div>
+            <button type="button" class="toast__close" @onclick="() => CloseToast()">×</button>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isProcessing;
+    private DateTime NextMonthDate;
+    private string NextMonthDisplay => NextMonthDate.ToString("yyyy-MM");
+
+    private bool showToast;
+    private string toastTitle = string.Empty;
+    private string toastMessage = string.Empty;
+    private string toastClass = string.Empty;
+    private CancellationTokenSource? toastCts;
+
+    protected override void OnInitialized()
+    {
+        NextMonthDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1);
+    }
+
+    private async Task HandleCreateSchedule()
+    {
+        isProcessing = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            int year = NextMonthDate.Year;
+            int month = NextMonthDate.Month;
+
+            if (ScheduleController.HasSchedule(year, month))
+            {
+                await ShowErrorToast("Tvarkaraštis jau egzistuoja šiam mėnesiui.");
+                return;
+            }
+
+            var ok = ScheduleController.GenerateSchedule(year, month);
+            if (ok)
+            {
+                await ShowSuccessToast("Tvarkaraštis sugeneruotas sėkmingai.");
+            }
+            else
+            {
+                await ShowErrorToast("Nepavyko sugeneruoti tvarkaraščio.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorToast($"Klaida: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task ShowSuccessToast(string messageText)
+    {
+        await ShowToastAsync("Sėkmė", messageText, "toast-success");
+    }
+
+    private async Task ShowErrorToast(string messageText)
+    {
+        await ShowToastAsync("Klaida", messageText, "toast-error");
+    }
+
+    private async Task ShowToastAsync(string title, string messageText, string cssClass, int durationMs = 3000)
+    {
+        toastCts?.Cancel();
+        toastCts?.Dispose();
+
+        toastCts = new CancellationTokenSource();
+        toastTitle = title;
+        toastMessage = messageText;
+        toastClass = cssClass;
+        showToast = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await Task.Delay(durationMs, toastCts.Token);
+            await CloseToast();
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private async Task CloseToast()
+    {
+        showToast = false;
+        toastTitle = string.Empty;
+        toastMessage = string.Empty;
+        toastClass = string.Empty;
+        await InvokeAsync(StateHasChanged);
+    }
+}
