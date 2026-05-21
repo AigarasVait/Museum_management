@@ -35,7 +35,6 @@ namespace Museum_management.Controllers
                     Fte = reader.IsDBNull(reader.GetOrdinal("fte")) ? 1m : reader.GetDecimal("fte"),
                     Email = reader.IsDBNull(reader.GetOrdinal("email")) ? string.Empty : reader.GetString("email"),
                     Password = reader.IsDBNull(reader.GetOrdinal("password")) ? string.Empty : reader.GetString("password"),
-                    Role = reader.IsDBNull(reader.GetOrdinal("role")) ? string.Empty : reader.GetString("role"),
                 });
             }
 
