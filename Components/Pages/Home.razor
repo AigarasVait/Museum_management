@@ -17,6 +17,9 @@
         <button class="btn-hero" @onclick="OpenHolidayManagementPage">
             Valdyti atostogų užklausas
         </button>
+        <button class="btn-hero" @onclick="OpenScheduleManagementPage">
+            Generuoti tvarkaraštį
+        </button>
         <button class="btn-hero btn-secondary" @onclick="OpenHolidayPage">
             Peržiūrėti atostogas
         </button>
@@ -41,6 +44,11 @@
     {
         Nav.NavigateTo("/tours");
     }
+    
+        private void OpenScheduleManagementPage()
+        {
+            Nav.NavigateTo("/schedule-management");
+        }
 
     private void OpenHolidayPage()
     {

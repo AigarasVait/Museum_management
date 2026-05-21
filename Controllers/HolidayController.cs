@@ -115,5 +115,39 @@ namespace Museum_management.Controllers
 
             return result;
         }
+
+        // Fetch approved holidays overlapping the provided range for all employees (no ID filter).
+        public List<Holiday> GetUpcomingHolidays(DateOnly rangeStart, DateOnly rangeEnd)
+        {
+            var result = new List<Holiday>();
+
+            using var conn = _db.CreateConnection();
+            conn.Open();
+
+            var cmd = new MySqlCommand(@"
+                SELECT id, employee_id, start, end, status
+                FROM holiday
+                WHERE status = @status
+                  AND NOT (end < @rangeStart OR start > @rangeEnd)
+                ORDER BY id DESC;", conn);
+            cmd.Parameters.AddWithValue("@status", "Patvirtinta");
+            cmd.Parameters.AddWithValue("@rangeStart", rangeStart.ToDateTime(TimeOnly.MinValue));
+            cmd.Parameters.AddWithValue("@rangeEnd", rangeEnd.ToDateTime(TimeOnly.MinValue));
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(new Holiday
+                {
+                    Id = reader.GetInt32("id"),
+                    EmployeeId = reader.GetInt32("employee_id"),
+                    Start = DateOnly.FromDateTime(reader.GetDateTime("start")),
+                    End = DateOnly.FromDateTime(reader.GetDateTime("end")),
+                    Status = reader.GetString("status")
+                });
+            }
+
+            return result;
+        }
     }
 }

@@ -1,0 +1,191 @@
+.schedule-management-page {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 2rem 1rem 3rem;
+	color: #e0e0e0;
+	position: relative;
+}
+
+.management-hero {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	gap: 1rem;
+	margin-bottom: 1.5rem;
+	padding: 1.5rem 1.5rem 0;
+}
+
+.management-hero h1 {
+	margin: 0;
+	font-size: 2.1rem;
+	color: var(--gold-accent);
+	text-transform: uppercase;
+	letter-spacing: 2px;
+}
+
+.management-hero .subtitle {
+	margin: 0.6rem 0 0;
+	color: #b9b9b9;
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
+.management-card {
+	background: linear-gradient(180deg, #1a1a1a 0%, #151515 100%);
+	border: 1px solid #333;
+	border-radius: 16px;
+	padding: 1.5rem;
+	box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32);
+	backdrop-filter: blur(6px);
+}
+
+h2 {
+	margin: 0;
+	font-size: 1.05rem;
+	text-transform: uppercase;
+	letter-spacing: 1.5px;
+	color: #f0e1b2;
+}
+
+.management-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.management-actions span {
+	font-size: 1rem;
+	color: #d7d7d7;
+}
+
+.management-actions strong {
+	color: var(--gold-accent);
+}
+
+.btn-hero {
+	background-color: transparent;
+	border: 2px solid var(--gold-accent);
+	color: var(--gold-accent);
+	padding: 0.9rem 1.6rem;
+	font-size: 0.95rem;
+	font-weight: bold;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	cursor: pointer;
+	border-radius: 6px;
+	transition: all 0.3s ease;
+	min-width: 180px;
+}
+
+.btn-hero:hover:not(:disabled) {
+	background-color: var(--gold-accent);
+	color: #000;
+	box-shadow: 0 0 20px rgba(212, 175, 55, 0.45);
+	transform: translateY(-2px);
+}
+
+.btn-hero:disabled {
+	opacity: 0.6;
+	cursor: wait;
+	transform: none;
+	box-shadow: none;
+}
+
+.toast {
+	position: fixed;
+	top: 1.25rem;
+	right: 1.25rem;
+	z-index: 4000;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+	min-width: min(420px, calc(100vw - 2.5rem));
+	max-width: 520px;
+	padding: 1rem 1.1rem;
+	border-radius: 14px;
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+	border: 1px solid transparent;
+	backdrop-filter: blur(8px);
+}
+
+.toast__content {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	color: #fff;
+	line-height: 1.4;
+	flex: 1;
+}
+
+.toast__content strong {
+	font-size: 0.95rem;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.toast__content span {
+	color: rgba(255, 255, 255, 0.9);
+	word-break: break-word;
+}
+
+.toast__close {
+	background: transparent;
+	border: none;
+	color: #fff;
+	cursor: pointer;
+	font-size: 1.5rem;
+	line-height: 1;
+	padding: 0;
+	margin-top: -0.2rem;
+	flex-shrink: 0;
+}
+
+.toast-success {
+	background: rgba(46, 125, 50, 0.95);
+	border-color: rgba(126, 224, 129, 0.45);
+}
+
+.toast-error {
+	background: rgba(153, 27, 27, 0.96);
+	border-color: rgba(255, 138, 138, 0.45);
+}
+
+@media (max-width: 768px) {
+	.schedule-management-page {
+		padding: 1rem 0.75rem 2rem;
+	}
+
+	.management-hero {
+		padding: 1rem 0.75rem 0;
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.management-hero h1 {
+		font-size: 1.5rem;
+	}
+
+	.management-card {
+		padding: 1.1rem;
+	}
+
+	.management-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.btn-hero {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.toast {
+		right: 0.75rem;
+		left: 0.75rem;
+		min-width: 0;
+		max-width: none;
+	}
+}
