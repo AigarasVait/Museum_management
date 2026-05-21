@@ -1,0 +1,134 @@
+.schedule-page {
+	padding: 0;
+	min-height: 100vh;
+}
+
+.schedule-container {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 2rem 1rem;
+}
+
+.month-selector {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 2rem;
+	margin-bottom: 2rem;
+	padding: 1.5rem;
+	background: #161616;
+	border-radius: 12px;
+	border: 1px solid #333;
+}
+
+.month-selector .current-month {
+	font-size: 1.3rem;
+	font-weight: bold;
+	color: var(--gold-accent);
+	min-width: 150px;
+	text-align: center;
+}
+
+.btn-nav {
+	background: transparent;
+	border: 1px solid #555;
+	color: #b9b9b9;
+	padding: 0.7rem 1.2rem;
+	cursor: pointer;
+	border-radius: 6px;
+	transition: all 0.3s ease;
+	font-size: 0.9rem;
+	font-weight: 500;
+}
+
+.btn-nav:hover {
+	border-color: var(--gold-accent);
+	color: var(--gold-accent);
+	background: rgba(212, 175, 55, 0.05);
+}
+
+.schedule-table-wrapper {
+	overflow-x: auto;
+	background: #161616;
+	border-radius: 12px;
+	border: 1px solid #333;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+	margin-bottom: 2rem;
+}
+
+.schedule-table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	color: #e0e0e0;
+}
+
+.schedule-table thead {
+	background: linear-gradient(180deg, #222 0%, #1a1a1a 100%);
+}
+
+.schedule-table th {
+	text-align: left;
+	padding: 1rem 1.25rem;
+	color: var(--gold-accent);
+	text-transform: uppercase;
+	font-size: 0.85rem;
+	font-weight: bold;
+	letter-spacing: 1px;
+	border-bottom: 2px solid var(--gold-accent);
+}
+
+.schedule-table td {
+	padding: 1.1rem 1.25rem;
+	border-bottom: 1px solid #2a2a2a;
+	vertical-align: middle;
+}
+
+.schedule-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.schedule-table tbody tr:hover {
+	background-color: rgba(212, 175, 55, 0.06);
+	transition: 0.25s;
+}
+
+.schedule-row {
+	transition: background-color 0.25s;
+}
+
+.empty-state {
+	text-align: center;
+	padding: 4rem 2rem;
+	color: #777;
+	font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+	.schedule-hero {
+		min-height: 22vh;
+		padding: 2rem 1.5rem;
+	}
+
+	.schedule-hero h1 {
+		font-size: 1.8rem;
+	}
+
+	.schedule-hero .subtitle {
+		font-size: 0.95rem;
+	}
+
+	.month-selector {
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.schedule-table {
+		font-size: 0.85rem;
+	}
+
+	.schedule-table th,
+	.schedule-table td {
+		padding: 0.75rem 0.5rem;
+	}
+}

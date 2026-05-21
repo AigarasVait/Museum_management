@@ -1,0 +1,66 @@
+@page "/tvarkarastis"
+@page "/schedule"
+@rendermode @(global::Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer)
+
+@inject global::Museum_management.Controllers.ScheduleEntryController ScheduleEntryController
+
+<div class="schedule-page">
+    <div class="schedule-container">
+        <div class="month-selector">
+            <button class="btn-nav" @onclick="() => CurrentDate = CurrentDate.AddMonths(-1)">← Ankstesnis</button>
+            <span class="current-month">@CurrentDate.ToString("yyyy-MM")</span>
+            <button class="btn-nav" @onclick="() => CurrentDate = CurrentDate.AddMonths(1)">Kitas →</button>
+        </div>
+
+        @{
+            var monthEntries = (scheduleEntries ?? new List<ScheduleEntry>())
+                .Where(e => e.Date.Year == CurrentDate.Year && e.Date.Month == CurrentDate.Month)
+                .ToList();
+        }
+
+        @if (monthEntries.Any())
+        {
+            <div class="schedule-table-wrapper">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Pradžia</th>
+                            <th>Pabaiga</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in monthEntries)
+                        {
+                            <tr class="schedule-row">
+                                <td>
+                                    <strong>@entry.Date.ToString("yyyy-MM-dd")</strong>
+                                </td>
+                                <td>@entry.StartHour:00</td>
+                                <td>@entry.EndHour:00</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <p>Šiam mėnesiui tvarkaraščio įrašų nerasta.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<ScheduleEntry>? scheduleEntries;
+    private DateTime CurrentDate;
+
+    protected override Task OnInitializedAsync()
+    {
+        CurrentDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        scheduleEntries = ScheduleEntryController.GetUserSchedule(1);
+        return Task.CompletedTask;
+    }
+}

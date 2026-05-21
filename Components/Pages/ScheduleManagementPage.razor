@@ -1,7 +1,7 @@
 @page "/schedule-management"
 @rendermode @(global::Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer)
 
-@inject global::Museum_management.Controllers.ScheduleController ScheduleController
+@inject global::Museum_management.Controllers.ScheduleEntryController ScheduleEntryController
 
 <div class="schedule-management-page">
     <div class="management-hero">
@@ -54,35 +54,28 @@
     {
         isProcessing = true;
         await InvokeAsync(StateHasChanged);
-        try
-        {
-            int year = NextMonthDate.Year;
-            int month = NextMonthDate.Month;
+        
+        int year = NextMonthDate.Year;
+        int month = NextMonthDate.Month;
 
-            if (ScheduleController.HasSchedule(year, month))
-            {
-                await ShowErrorToast("Tvarkaraštis jau egzistuoja šiam mėnesiui.");
-                return;
-            }
-
-            var ok = ScheduleController.GenerateSchedule(year, month);
-            if (ok)
-            {
-                await ShowSuccessToast("Tvarkaraštis sugeneruotas sėkmingai.");
-            }
-            else
-            {
-                await ShowErrorToast("Nepavyko sugeneruoti tvarkaraščio.");
-            }
-        }
-        catch (Exception ex)
+        if (ScheduleEntryController.HasSchedule(year, month))
         {
-            await ShowErrorToast($"Klaida: {ex.Message}");
-        }
-        finally
-        {
+            await ShowErrorToast("Tvarkaraštis jau egzistuoja šiam mėnesiui.");
             isProcessing = false;
+            return;
         }
+
+        var ok = ScheduleEntryController.GenerateSchedule(year, month);
+        if (ok)
+        {
+            await ShowSuccessToast("Tvarkaraštis sugeneruotas sėkmingai.");
+        }
+        else
+        {
+            await ShowErrorToast("Nepavyko sugeneruoti tvarkaraščio.");
+        }
+
+        isProcessing = false;
     }
 
     private async Task ShowSuccessToast(string messageText)

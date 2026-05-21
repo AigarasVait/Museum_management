@@ -23,6 +23,9 @@
         <button class="btn-hero btn-secondary" @onclick="OpenHolidayPage">
             Peržiūrėti atostogas
         </button>
+        <button class="btn-hero btn-secondary" @onclick="OpenSchedulePage">
+            Peržiūrėti tvarkaraštį
+        </button>
         <button class="btn-hero btn-secondary" @onclick="OpenTours">
             Peržiūrėti ekskursijas
         </button>
@@ -45,14 +48,19 @@
         Nav.NavigateTo("/tours");
     }
     
-        private void OpenScheduleManagementPage()
-        {
-            Nav.NavigateTo("/schedule-management");
-        }
+    private void OpenScheduleManagementPage()
+    {
+        Nav.NavigateTo("/schedule-management");
+    }
 
     private void OpenHolidayPage()
     {
         Nav.NavigateTo("/holidays");
+    }
+
+    private void OpenSchedulePage()
+    {
+        Nav.NavigateTo("/schedule");
     }
 
     private void OpenHolidayManagementPage()
