@@ -1,8 +1,9 @@
-@page "/atostogos"
 @page "/holidays"
-@rendermode @(global::Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer)
+@rendermode InteractiveServer
+@using Museum_management.Models
+@using Museum_management.Controllers
 
-@inject global::Museum_management.Controllers.HolidayController HolidayController
+@inject HolidayController HolidayController
 
 <div class="holiday-page">
     <div class="holiday-toolbar">
@@ -138,14 +139,14 @@
 
 @code {
     private HolidayFormModel requestForm = new();
-    private List<global::Museum_management.Models.Holiday> holidays = new();
+    private List<Holiday> holidays = new();
     private bool isLoading = true;
     private bool isSubmitting;
     private bool isCancelling;
     private bool showRequestDialog;
     private bool showCancelDialog;
     private const int employeeId = 1;
-    private global::Museum_management.Models.Holiday? holidayToCancel;
+    private Holiday? holidayToCancel;
     private string formError = string.Empty;
     private bool showToast;
     private string toastTitle = string.Empty;
@@ -186,7 +187,7 @@
         isSubmitting = false;
     }
 
-    private void CancelRequest(global::Museum_management.Models.Holiday holiday)
+    private void CancelRequest(Holiday holiday)
     {
         holidayToCancel = holiday;
         showCancelDialog = true;
@@ -223,11 +224,6 @@
                 await ShowErrorToast("Pasirinktu laikotarpiu turite suplanuotų ekskursijų.");
             }
         }
-        catch
-        {
-            CloseRequestDialog();
-            await ShowErrorToast("Nepavyko pateikti prašymo.");
-        }
         finally
         {
             isSubmitting = false;
@@ -244,19 +240,10 @@
         isCancelling = true;
         try
         {
-            var result = await Task.Run(() => HolidayController.ChangeStatus(holidayToCancel.Id, employeeId, "Atšaukta"));
-
-            if (result > 0)
-            {
-                await LoadHolidaysAsync();
-                HandleCancel();
-                await ShowSuccessToast("Prašymas sėkmingai atšauktas.");
-            }
-            else
-            {
-                HandleCancel();
-                await ShowErrorToast("Nepavyko atšaukti prašymo.");
-            }
+            await Task.Run(() => HolidayController.ChangeStatus(holidayToCancel.Id, employeeId, "Atšaukta"));
+            await LoadHolidaysAsync();
+            HandleCancel();
+            await ShowSuccessToast("Prašymas sėkmingai atšauktas.");
         }
         finally
         {

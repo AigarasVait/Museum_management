@@ -1,8 +1,9 @@
-@page "/tvarkarastis"
 @page "/schedule"
-@rendermode @(global::Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer)
+@rendermode InteractiveServer
+@using Museum_management.Models
+@using Museum_management.Controllers
 
-@inject global::Museum_management.Controllers.ScheduleEntryController ScheduleEntryController
+@inject ScheduleEntryController ScheduleEntryController
 
 <div class="schedule-page">
     <div class="schedule-container">

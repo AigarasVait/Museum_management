@@ -71,7 +71,7 @@ namespace Museum_management.Controllers
             return true;
         }
 
-        public int ChangeStatus(int holidayId, int employeeId, string status)
+        public void ChangeStatus(int holidayId, int employeeId, string status)
         {
             using var conn = _db.CreateConnection();
             conn.Open();
@@ -84,7 +84,7 @@ namespace Museum_management.Controllers
             cmd.Parameters.AddWithValue("@employee_id", employeeId);
             cmd.Parameters.AddWithValue("@status", status);
 
-            return cmd.ExecuteNonQuery();
+            cmd.ExecuteNonQuery();
         }
 
         public List<Holiday> GetHolidayRequests()
@@ -116,7 +116,6 @@ namespace Museum_management.Controllers
             return result;
         }
 
-        // Fetch approved holidays overlapping the provided range for all employees (no ID filter).
         public List<Holiday> GetUpcomingHolidays(DateOnly rangeStart, DateOnly rangeEnd)
         {
             var result = new List<Holiday>();
