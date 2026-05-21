@@ -1,7 +1,9 @@
 @page "/holiday-management"
-@rendermode @(global::Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer)
+@using Museum_management.Models
+@using Museum_management.Controllers
+@rendermode InteractiveServer
 
-@inject global::Museum_management.Controllers.HolidayController HolidayController
+@inject HolidayController HolidayController
 
 <div class="holiday-management-page">
     <div class="management-hero">
@@ -100,19 +102,14 @@
 </div>
 
 @code {
-    private List<global::Museum_management.Models.Holiday> holidays = new();
+    private List<Holiday> holidays = new();
     private bool isLoading = true;
     private bool isProcessing;
     private bool showApprovalDialog;
     private bool showRejectionDialog;
-    private global::Museum_management.Models.Holiday? selectedHoliday;
+    private Holiday? selectedHoliday;
 
     protected override async Task OnInitializedAsync()
-    {
-        await LoadHolidaysAsync();
-    }
-
-    private async Task LoadHolidaysAsync()
     {
         isLoading = true;
         try
@@ -125,13 +122,13 @@
         }
     }
 
-    private void HandleReject(global::Museum_management.Models.Holiday holiday)
+    private void HandleReject(Holiday holiday)
     {
         selectedHoliday = holiday;
         showRejectionDialog = true;
     }
 
-    private void HandleConfirm(global::Museum_management.Models.Holiday holiday)
+    private void HandleConfirm(Holiday holiday)
     {
         selectedHoliday = holiday;
         showApprovalDialog = true;
@@ -157,17 +154,9 @@
         isProcessing = true;
         try
         {
-            var result = await Task.Run(() => HolidayController.ChangeStatus(selectedHoliday.Id, selectedHoliday.EmployeeId, "Patvirtinta"));
-
-            if (result > 0)
-            {
-                await LoadHolidaysAsync();
-                HandleCancelConfirmation();
-            }
-            else
-            {
-                HandleCancelConfirmation();
-            }
+            await Task.Run(() => HolidayController.ChangeStatus(selectedHoliday.Id, selectedHoliday.EmployeeId, "Patvirtinta"));
+            holidays = await Task.Run(() => HolidayController.GetHolidayRequests());
+            HandleCancelConfirmation();
         }
         finally
         {
@@ -183,17 +172,9 @@
         isProcessing = true;
         try
         {
-            var result = await Task.Run(() => HolidayController.ChangeStatus(selectedHoliday.Id, selectedHoliday.EmployeeId, "Atmesta"));
-
-            if (result > 0)
-            {
-                await LoadHolidaysAsync();
-                HandleCancelRejection();
-            }
-            else
-            {
-                HandleCancelRejection();
-            }
+            await Task.Run(() => HolidayController.ChangeStatus(selectedHoliday.Id, selectedHoliday.EmployeeId, "Atmesta"));
+            holidays = await Task.Run(() => HolidayController.GetHolidayRequests());
+            HandleCancelRejection();
         }
         finally
         {
