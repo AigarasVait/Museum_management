@@ -5,7 +5,7 @@ using MySqlConnector;
 
 namespace Museum_management.Controllers
 {
-    public class ScheduleController
+    public class ScheduleEntryController
     {
         private readonly DBConnection _db;
         private readonly EmployeeController _employeeController;
@@ -18,7 +18,7 @@ namespace Museum_management.Controllers
         private Dictionary<int, int> _currentEmployeeFteHours = new();
         private Dictionary<(DateOnly date, int startHour, int endHour), HashSet<int>> _currentAssignedEmployeesBySlot = new();
 
-        public ScheduleController(DBConnection db, EmployeeController employeeController, HolidayController holidayController)
+        public ScheduleEntryController(DBConnection db, EmployeeController employeeController, HolidayController holidayController)
         {
             _db = db;
             _employeeController = employeeController;
@@ -211,5 +211,34 @@ namespace Museum_management.Controllers
             return Convert.ToInt32(result) > 0;
         }
 
+        public List<ScheduleEntry> GetUserSchedule(int employeeId)
+        {
+            var entries = new List<ScheduleEntry>();
+            using var conn = _db.CreateConnection();
+            conn.Open();
+
+            var cmd = new MySqlCommand(@"
+                SELECT id, employee_id, date, `start`, `end`
+                FROM schedule_entry 
+                WHERE employee_id = @employee_id 
+                ORDER BY date ASC, `start` ASC;", conn);
+            
+            cmd.Parameters.AddWithValue("@employee_id", employeeId);
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                entries.Add(new ScheduleEntry
+                {
+                    Id = reader.GetInt32("id"),
+                    EmployeeId = reader.GetInt32("employee_id"),
+                    Date = DateOnly.FromDateTime(reader.GetDateTime("date")),
+                    StartHour = reader.GetInt32("start"),
+                    EndHour = reader.GetInt32("end")
+                });
+            }
+
+            return entries;
+        }
     }
 }

@@ -7,6 +7,5 @@ namespace Museum_management.Models
         public DateOnly Date { get; set; }
         public int StartHour { get; set; }
         public int EndHour { get; set; }
-        public string Notes { get; set; } = string.Empty;
     }
 }
